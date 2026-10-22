@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Photo rename helper · Coastal Air &amp; Electrical</title>
+<style>
+*{box-sizing:border-box}
+body{font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif;margin:0;background:#f6f3ee;color:#1a1c24}
+header{background:#13151d;color:#fff;padding:22px 28px}
+header h1{margin:0;font-size:22px}
+header ol{margin:8px 0 0;padding-left:20px;color:#c9ccd8}
+main{padding:24px 28px 120px;display:grid;gap:22px}
+.drop{display:block;border:2px dashed #c9bfae;border-radius:18px;padding:34px;text-align:center;background:#fff;cursor:pointer;transition:.2s}
+.drop.over{border-color:#f49424;background:#fff7ec}
+.drop b{font-size:18px}
+.todo{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.todo span{padding:4px 10px;border-radius:999px;background:#fff;font-size:13px;box-shadow:inset 0 0 0 1px #e2dccf}
+.todo span.ok{background:#d9f5e3;box-shadow:inset 0 0 0 1px #4cd07a}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.card{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 1px 0 rgba(0,0,0,.08);transition:.2s}
+.card img{width:100%;height:170px;object-fit:cover;display:block;background:#ddd}
+.card div{padding:10px}
+.card small{display:block;color:#5d6170;word-break:break-all;margin-bottom:6px}
+.card select{width:100%;padding:9px;border-radius:9px;border:1.5px solid #ddd;font:inherit}
+.card.done{outline:3px solid #4cd07a}
+.card.dup{outline:3px solid #e5533d}
+.card.skip{opacity:.45}
+.bar{position:fixed;left:0;right:0;bottom:0;background:#13151d;color:#fff;padding:14px 28px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.bar button{padding:12px 22px;border-radius:999px;border:0;background:#f49424;color:#1a1205;font:700 15px system-ui;cursor:pointer}
+.bar button:disabled{opacity:.4;cursor:default}
+.bar span{color:#aeb2c1;font-size:13.5px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Coastal Air &amp; Electrical: photo rename helper</h1>
+  <ol>
+    <li>Drop all the client's photos below (or click to choose them).</li>
+    <li>Under each photo, pick what it is from the list.</li>
+    <li>Click <b>Download renamed photos</b>, then move the downloaded files into the <b>images</b> folder.</li>
+  </ol>
+</header>
+<main>
+  <label class="drop" id="drop"><input type="file" id="pick" accept="image/*" multiple hidden><b>Drop photos here</b><br>or click to choose files</label>
+  <div><b>Checklist</b> (turns green when assigned):<div class="todo" id="todo"></div></div>
+  <div class="grid" id="grid"></div>
+</main>
+<div class="bar"><b id="count"></b><button id="go" disabled>Download renamed photos</button><span>Resized to max 1600px and saved as JPG. Nothing is uploaded anywhere. It all happens on your computer.</span></div>
+
+<script>
+const SLOTS = [
+  ['ducted-westlakes.jpg', 'Two techs lifting a ducted unit through a doorway (drop sheets on floor)'],
+  ['ducted-copper-grilles.jpg', 'Red brick gable wall with two long ducted grilles + skylight'],
+  ['commercial-daikin-freshair.jpg', 'Tech in orange hi-vis in a roof space with silver ducting'],
+  ['commercial-75kw-handover.jpg', 'Tech + older man holding champagne in a warehouse'],
+  ['team-haier-factory.jpg', 'Big group photo in front of the blue Haier screen'],
+  ['team-panasonic-tour.jpg', 'Three guys at night in front of the Petronas Towers'],
+  ['ducted-fujitsu-10kw.jpg', 'Tall Fujitsu outdoor unit beside a plant (filtered photo)'],
+  ['split-dome-studio.jpg', 'White dome building in the forest with a Carrier unit'],
+  ['maintenance-condensate.jpg', 'Dirty pipe opening with a red cap (dark roof space)'],
+  ['split-mitsubishi-stacked.jpg', 'Mitsubishi Electric outdoor units stacked on wall brackets'],
+  ['commercial-headspace.jpg', 'Two men giving thumbs up in front of a green "headspace" sign'],
+  ['ducted-samsung-outdoor.jpg', 'Two Samsung outdoor units on a light grey weatherboard wall'],
+  ['commercial-diffuser.jpg', 'Tech on a ladder fitting a round ceiling vent, office fit-out'],
+  ['team-fun.jpg', 'Tech pointing / posing in an empty shop full of ductwork boxes'],
+  ['split-panasonic-apartment.jpg', 'Two small Panasonic units on a cream apartment wall'],
+  ['electrical-switchboard.jpg', 'Back of a tech\'s head wiring a switchboard'],
+  ['split-mhi-row.jpg', 'Three Mitsubishi Heavy Industries units in a row on yellow brick'],
+  ['ducted-bedroom.jpg', 'Finished bedroom with ceiling fan and long ducted grille'],
+  ['solar-hero.jpg', 'Gemini image: house with solar panels'],
+  ['outdoor-lighting.jpg', 'Gemini image: garden path lights at dusk'],
+  ['middleton-hero.jpg', 'Middleton / coastal header photo'],
+  ['og.jpg', 'Social share image (1200×630)']
+];
+const files = [];
+const $ = s => document.querySelector(s);
+const grid = $('#grid'), todo = $('#todo'), count = $('#count'), go = $('#go'), drop = $('#drop');
+const options = '<option value="">What is this photo?</option>' +
+  SLOTS.map(([n, d]) => `<option value="${n}">${n}  ·  ${d}</option>`).join('') +
+  '<option value="skip">Skip (don\'t use this one)</option>';
+
+function add(list) {
+  [...list].filter(f => f.type.startsWith('image/')).forEach(f => files.push({ file: f, url: URL.createObjectURL(f), target: '' }));
+  render();
+}
+function render() {
+  grid.innerHTML = files.map((x, i) => `<div class="card" data-i="${i}"><img src="${x.url}" alt=""><div><small>${x.file.name}</small><select data-i="${i}">${options}</select></div></div>`).join('');
+  grid.querySelectorAll('select').forEach(s => {
+    s.value = files[s.dataset.i].target;
+    s.onchange = () => { files[s.dataset.i].target = s.value; status(); };
+  });
+  status();
+}
+function status() {
+  const used = {};
+  files.forEach(x => { if (x.target && x.target !== 'skip') used[x.target] = (used[x.target] || 0) + 1; });
+  grid.querySelectorAll('.card').forEach(el => {
+    const t = files[el.dataset.i].target;
+    el.classList.toggle('done', !!t && t !== 'skip' && used[t] === 1);
+    el.classList.toggle('dup', !!t && used[t] > 1);
+    el.classList.toggle('skip', t === 'skip');
+  });
+  todo.innerHTML = SLOTS.map(([n]) => `<span class="${used[n] ? 'ok' : ''}">${n}</span>`).join('');
+  const dup = Object.values(used).some(v => v > 1), n = Object.keys(used).length;
+  count.textContent = `${n} of ${SLOTS.length} assigned` + (dup ? ' · two photos have the same name (red)' : '');
+  go.disabled = !n || dup;
+}
+const toJpg = file => new Promise((res, rej) => {
+  const img = new Image();
+  img.onload = () => {
+    const s = Math.min(1, 1600 / Math.max(img.width, img.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+    const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+    g.drawImage(img, 0, 0, c.width, c.height);
+    c.toBlob(res, 'image/jpeg', .85);
+  };
+  img.onerror = rej;
+  img.src = URL.createObjectURL(file);
+});
+go.onclick = async () => {
+  go.disabled = true; go.textContent = 'Downloading…';
+  for (const x of files) {
+    if (!x.target || x.target === 'skip') continue;
+    try {
+      const blob = await toJpg(x.file);
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = x.target;
+      document.body.appendChild(a); a.click(); a.remove();
+      await new Promise(r => setTimeout(r, 400));
+    } catch (e) { alert('Could not read ' + x.file.name + '. If it is an iPhone HEIC photo, convert it to JPG first.'); }
+  }
+  go.textContent = 'Download renamed photos'; status();
+};
+$('#pick').onchange = e => add(e.target.files);
+['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => add(e.dataTransfer.files));
+status();
+</script>
+</body>
+</html>
