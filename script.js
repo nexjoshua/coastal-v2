@@ -58,7 +58,7 @@ const LOCATIONS = {
   },
   middleton: {
     name: 'Middleton', region: 'Fleurieu Peninsula', path: 'middleton/index.html', prettyPath: 'middleton/',
-    phone: '0413 784 024', tel: '0413784024',   // TODO: change if Middleton has its own number
+    phone: '0415 032 635', tel: '0415032635',
     blurb: 'Your local team for Middleton, Goolwa, Port Elliot, Victor Harbor and the south coast.',
     suburbs: ['Middleton', 'Goolwa', 'Goolwa Beach', 'Goolwa South', 'Hindmarsh Island', 'Port Elliot', 'Victor Harbor', 'Encounter Bay', 'Hayborough', 'McCracken', 'Waitpinga', 'Currency Creek', 'Mount Compass', 'Normanville', 'Yankalilla', 'Strathalbyn'],
     postcodes: n => (n >= 5201 && n <= 5214) || n === 5255
@@ -76,7 +76,8 @@ const FORM_ENDPOINT = 'https://services.leadconnectorhq.com/hooks/sKQj8192Kgs9Da
 const REVIEWS = [
   // { name: 'First name', text: 'Exact review text', when: 'March 2026' },
 ];
-const BRANDS = ['Mitsubishi Electric', 'Daikin', 'Panasonic', 'Fujitsu', 'Mitsubishi Heavy Industries', 'Samsung', 'Carrier', 'Haier'];
+const BRANDS = ['Panasonic', 'AirTouch 5', 'Mitsubishi Electric', 'Daikin', 'Fujitsu', 'Mitsubishi Heavy Industries', 'Samsung', 'Carrier', 'Haier'];
+const MAJOR_BRANDS = ['Panasonic', 'AirTouch 5'];   // shown highlighted in the brands strip
 /* Projects: [file, title, caption, category, era]  REPLACE (images) */
 const PROJECTS = [
   // New shoot. REPLACE: confirm suburb, caption and category for each
@@ -147,7 +148,7 @@ const IC = {
   g: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.4zM12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22zM6.4 14a6 6 0 0 1 0-3.9V7.4H3.1a10 10 0 0 0 0 9.2zM12 6c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 3.1 7.4L6.4 10C7.2 7.7 9.4 6 12 6z"/></svg>'
 };
 const page = document.body.dataset.page || '';
-const NAV = [['index.html', 'Home', 'home'], ['air-conditioning.html', 'Air Con', 'ac'], ['electrical.html', 'Electrical', 'electrical'], ['solar.html', 'Solar', 'solar'], ['work.html', 'Our Work', 'work'], ['reviews.html', 'Reviews', 'reviews'], ['about.html', 'About', 'about'], ['contact.html', 'Contact', 'contact']];
+const NAV = [['index.html', 'Home', 'home'], ['air-conditioning.html', 'Air Con', 'ac'], ['electrical.html', 'Electrical', 'electrical'], ['batteries.html', 'Batteries', 'batteries'], ['work.html', 'Our Work', 'work'], ['reviews.html', 'Reviews', 'reviews'], ['about.html', 'About', 'about'], ['contact.html', 'Contact', 'contact']];
 /* REPLACE (logo + company name) */
 const brandHTML = `<a class="brand" href="${u('index.html')}" aria-label="${SITE.name} home"><img src="${u(SITE.logo)}" alt="" width="42" height="42"><span><b>COASTAL</b><small>AIR &amp; ELECTRICAL</small></span></a>`;
 const locSwitch = `<div class="loc-switch" role="group" aria-label="Choose your location">${Object.entries(LOCATIONS).map(([k, L]) => `<a href="${locHref(k)}"${k === LOCK ? ' class="on" aria-current="true"' : ''}>${L.name}</a>`).join('')}</div>`;
@@ -179,9 +180,9 @@ if (hd) hd.outerHTML = `<a class="skip" href="#main">Skip to content</a>
 
 const ft = $('#footer');
 if (ft) ft.outerHTML = `<footer class="foot"><div class="foot-grid">
-  <div>${brandHTML}<p>Licensed air conditioning, electrical and solar specialists with local teams in Seaford and Middleton.</p>
+  <div>${brandHTML}<p>Licensed air conditioning and electrical specialists, plus home batteries with local teams in Seaford and Middleton.</p>
     ${SITE.licence ? `<p>Electrical licence ${esc(SITE.licence)}</p>` : ''}${SITE.arctick ? `<p>ARCtick ${esc(SITE.arctick)}</p>` : ''}${socials}</div>
-  <div><h4>Services</h4><a href="${u('air-conditioning.html')}">Air conditioning</a><a href="${u('air-conditioning.html#split')}">Split systems</a><a href="${u('air-conditioning.html#ducted')}">Ducted systems</a><a href="${u('air-conditioning.html#maintenance')}">AC maintenance</a><a href="${u('electrical.html')}">Electrical</a><a href="${u('solar.html')}">Solar</a></div>
+  <div><h4>Services</h4><a href="${u('air-conditioning.html')}">Air conditioning</a><a href="${u('air-conditioning.html#split')}">Split systems</a><a href="${u('air-conditioning.html#ducted')}">Ducted systems</a><a href="${u('air-conditioning.html#maintenance')}">AC maintenance</a><a href="${u('electrical.html')}">Electrical</a><a href="${u('batteries.html')}">Batteries</a></div>
   <div><h4>Locations</h4>${Object.entries(LOCATIONS).map(([k, L]) => `<a href="${locHref(k)}">${L.name} · ${L.region}</a>`).join('')}
     <h4 style="margin-top:22px">Company</h4><a href="${u('work.html')}">Our work</a><a href="${u('about.html')}">About us</a><a href="${u('reviews.html')}">Reviews</a><a href="${u('contact.html')}">Contact</a></div>
   <div><h4>Get in touch</h4><a href="tel:${LOC.tel}">${LOC.phone}</a>${SITE.email ? `<a href="mailto:${SITE.email}">${SITE.email}</a>` : ''}<a data-book>Get a free quote</a><ul class="hours-list" data-hours></ul><p style="margin-top:10px">24/7 for electrical emergencies</p></div>
@@ -223,7 +224,7 @@ wireEnquiry();
 $$('[data-call]').forEach(a => { a.href = 'tel:' + LOC.tel; if (!a.textContent.trim()) a.innerHTML = IC.phone + 'Call ' + LOC.phone; });
 document.addEventListener('click', e => { const a = e.target.closest('a[href^="tel:"]'); if (a) track('phone_click', { place: page }); });
 $$('[data-rating]').forEach(el => el.innerHTML = `<i class="stars">★★★★★</i> ${SITE.rating} from ${SITE.reviewCount} Google reviews`);
-$$('[data-brands]').forEach(el => el.innerHTML = `<div class="track">${[...BRANDS, ...BRANDS].map(b => `<span>${b}</span>`).join('')}</div>`);
+$$('[data-brands]').forEach(el => el.innerHTML = `<div class="track">${[...BRANDS, ...BRANDS].map(b => `<span${MAJOR_BRANDS.includes(b) ? ' class="major"' : ''}>${b}</span>`).join('')}</div>`);
 
 $$('[data-locations]').forEach(el => {
   el.innerHTML = `<div class="locs">${Object.entries(LOCATIONS).map(([k, L]) => {
