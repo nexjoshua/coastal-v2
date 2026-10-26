@@ -729,3 +729,12 @@ img{-webkit-user-select:none;user-select:none;-webkit-user-drag:none}
 .team-grid.crew.solo{grid-template-columns:1fr}
 .team-grid.crew.solo .lead .team-img{aspect-ratio:16/9}
 @media(max-width:860px){.team-grid.crew.solo .lead .team-img{aspect-ratio:4/3}}
+/* ===== Brands strip: highlight the main brands ===== */
+.brands span.major{color:var(--accent);text-shadow:0 0 30px rgba(244,148,36,.35)}
+/* ===== Final CTA without the form ===== */
+.final-copy{align-self:end;max-width:560px}
+.final-copy .lede{margin-top:0}
+.final-copy .final-tel{margin-top:26px}
+.final-copy .btns{margin-top:22px}
+.final-copy .final-meta{margin-top:22px}
+@media(max-width:980px){.final-stage{display:none}}
