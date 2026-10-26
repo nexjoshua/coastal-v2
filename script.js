@@ -71,7 +71,7 @@ const POSTCODE_MAYBE = n => n >= 5000 && n <= 5299;
 /* Opening hours (24h). null = closed. TODO: confirm with the client */
 const HOURS = { Mon: [7, 17], Tue: [7, 17], Wed: [7, 17], Thu: [7, 17], Fri: [7, 17], Sat: null, Sun: null };
 /* REPLACE (form): paste a Formspree / Make / GoHighLevel webhook URL. Empty = form opens a pre-filled text message */
-const FORM_ENDPOINT = '';
+const FORM_ENDPOINT = 'https://services.leadconnectorhq.com/hooks/sKQj8192Kgs9DasTlSOO/webhook-trigger/9fb84fdd-8e2e-4caf-a522-38ea122527d3';
 /* Real Google reviews, copied word for word. Leave empty until you have them */
 const REVIEWS = [
   // { name: 'First name', text: 'Exact review text', when: 'March 2026' },
@@ -79,6 +79,13 @@ const REVIEWS = [
 const BRANDS = ['Mitsubishi Electric', 'Daikin', 'Panasonic', 'Fujitsu', 'Mitsubishi Heavy Industries', 'Samsung', 'Carrier', 'Haier'];
 /* Projects: [file, title, caption, category, era]  REPLACE (images) */
 const PROJECTS = [
+  // New shoot. REPLACE: confirm suburb, caption and category for each
+  ['reno-ducted.jpg', 'Ducted in a renovation', 'Sealing the duct run through new framing on a home extension.', 'ducted', 'Adelaide'],
+  ['electrical-rough-in.jpg', 'New build rough-in', 'Cabling run through the frame for power and lighting.', 'electrical', 'Adelaide'],
+  ['reno-with-builder.jpg', 'Working with the builder', 'Insulated pipework going in alongside the builder.', 'split', 'Adelaide'],
+  ['work-sparks.jpg', 'Commercial ducting supports', 'Cutting unistrut to hang ducting on a commercial fit-out.', 'commercial', 'Adelaide'],
+  ['electrical-wiring.jpg', 'Ducted unit wiring', 'Wiring the control board on a commercial ducted unit.', 'commercial', 'Adelaide'],
+  // Existing jobs
   ['ducted-westlakes.jpg', '12kW ducted, zero ceiling space', 'A 12kW Mitsubishi Electric ducted system fitted into a home with almost no ceiling space.', 'ducted', 'Adelaide'],
   ['ducted-copper-grilles.jpg', 'Copper-finish ducted grilles', 'Linear grilles scrubbed back to a copper finish against original brick.', 'ducted', 'Adelaide'],
   ['commercial-daikin-freshair.jpg', '12 × Daikin split systems', 'Commercial install with fresh-air intake and seismic restraints on every unit.', 'commercial', 'Adelaide'],
@@ -184,12 +191,32 @@ if (ft) ft.outerHTML = `<footer class="foot"><div class="foot-grid">
 
 /* floating call (+ optional WhatsApp) button, and a quote pill on phones */
 document.body.insertAdjacentHTML('beforeend', `<div class="fab">${SITE.whatsapp ? `<a class="fab-btn wa" href="https://wa.me/${SITE.whatsapp}" target="_blank" rel="noopener" aria-label="Message us on WhatsApp">${IC.chat}</a>` : ''}<a class="fab-btn" href="tel:${LOC.tel}" aria-label="Call ${LOC.phone}">${IC.phone}</a></div><a class="mquote" data-book>${IC.cal}Free quote</a>`);
-
+/* back to top button (with scroll progress ring) */
+const fabEl = $('.fab');
+if (fabEl) {
+  fabEl.insertAdjacentHTML('afterbegin', `<button type="button" class="fab-btn top" aria-label="Back to top"><svg class="top-ring" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="22"/><circle class="top-prog" cx="24" cy="24" r="22" pathLength="100"/></svg><svg class="top-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>`);
+  const topBtn = $('.fab-btn.top', fabEl), topProg = $('.top-prog', topBtn);
+  let topTick = false;
+  const topUpd = () => {
+    topTick = false;
+    const max = Math.max(1, document.documentElement.scrollHeight - innerHeight), y = scrollY;
+    topBtn.classList.toggle('on', y > innerHeight * .8);
+    topProg.style.strokeDashoffset = 100 - cl(y / max) * 100;
+  };
+  addEventListener('scroll', () => { if (!topTick) { topTick = true; requestAnimationFrame(topUpd); } }, { passive: true });
+  addEventListener('resize', topUpd); topUpd();
+  topBtn.addEventListener('click', () => {
+    if (lenis) lenis.scrollTo(0, { duration: 1.6 }); else scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+    const b = $('.brand'); if (b) b.focus({ preventScroll: true });   // keyboard users land at the top too
+    track('back_to_top', { place: page });
+  });
+}
 /* shared links */
 const wireEnquiry = (scope = document, label = 'Get a free quote') => $$('[data-book]', scope).forEach(a => {
   if (a.dataset.wired) return; a.dataset.wired = 1;
   a.href = SITE.enquiry; a.target = '_blank'; a.rel = 'noopener';
   if (!a.textContent.trim()) a.innerHTML = IC.cal + label;
+    if (!a.querySelector('.sr-only')) a.insertAdjacentHTML('beforeend', '<span class="sr-only"> (opens in a new tab)</span>');
   a.addEventListener('click', () => track('enquiry_click', { place: page }));
 });
 wireEnquiry();
@@ -535,29 +562,45 @@ $$('[data-gallery]').forEach(el => {
   }));
 });
 
-/* contact + quote forms */
+/* contact + quote forms → GoHighLevel inbound webhook */
+const smsHref = d => `sms:${LOC.tel}?&body=${encodeURIComponent(`Website enquiry (${LOC.name})\nName: ${d.full_name}\nPhone: ${d.phone}\nSuburb: ${d.suburb}\nService: ${d.service}\n${d.message || ''}`)}`;
 $$('form[data-form]').forEach(f => {
   const err = $('.err', f);
   f.addEventListener('submit', async e => {
     e.preventDefault();
-    if (f.company && f.company.value) return;
+    if (f.company && f.company.value) return;   // honeypot: bots fill this hidden field, people don't
     let ok = true;
     $$('[required]', f).forEach(i => { const bad = !i.value.trim(); i.classList.toggle('bad', bad); if (bad) ok = false; });
     err.textContent = ok ? '' : 'Please fill in the highlighted fields.';
     if (!ok) { $('.bad', f).focus(); return; }
-    const data = new FormData(f); data.delete('company'); data.append('page', location.pathname); data.append('team', LOC.name);
-    const btn = $('button[type=submit]', f), txt = btn.innerHTML; btn.disabled = true; btn.textContent = 'Sending…';
+
+    const d = Object.fromEntries(new FormData(f)); delete d.company;
+    const full = (d.name || '').trim(), parts = full.split(/\s+/);
+    const payload = {
+      ...d,
+      full_name: full,
+      first_name: parts[0] || '',
+      last_name: parts.slice(1).join(' '),
+      source: 'Website',
+      form: f.dataset.form,          // "quote" (home page) or "contact" (contact page)
+      team: LOC.name,                // Seaford or Middleton
+      page: location.pathname,
+      submitted_at: new Date().toISOString()
+    };
+
+    const btn = $('button[type=submit]', f), txt = btn.innerHTML;
+    btn.disabled = true; btn.textContent = 'Sending…';
     try {
-      if (FORM_ENDPOINT) {
-        const r = await fetch(FORM_ENDPOINT, { method: 'POST', body: data, headers: { Accept: 'application/json' } });
-        if (!r.ok) throw new Error(r.status);
-      } else {
-        const body = `Website enquiry (${LOC.name})\nName: ${data.get('name')}\nPhone: ${data.get('phone')}\nSuburb: ${data.get('suburb')}\nService: ${data.get('service')}\n${data.get('message') || ''}`;
-        location.href = `sms:${LOC.tel}?&body=${encodeURIComponent(body)}`;
-      }
-      f.classList.add('sent'); track('form_submit', { form: f.dataset.form });
-    } catch (x) { err.textContent = `Sorry, that didn't send. Please call ${LOC.phone}.`; }
-    finally { btn.disabled = false; btn.innerHTML = txt; }
+      if (!FORM_ENDPOINT) throw new Error('No form endpoint set');
+      const r = await fetch(FORM_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      if (!r.ok) throw new Error(r.status);
+      f.classList.add('sent'); f.reset();
+      track('form_submit', { form: f.dataset.form, service: payload.service });
+    } catch (x) {
+      // never lose a lead: offer a call or a pre-filled text instead
+      err.innerHTML = `Sorry, that didn't send. Please <a href="tel:${LOC.tel}">call ${LOC.phone}</a> or <a href="${smsHref(payload)}">send it as a text</a>.`;
+      track('form_error', { form: f.dataset.form });
+    } finally { btn.disabled = false; btn.innerHTML = txt; }
   });
 });
 
@@ -688,7 +731,7 @@ if (hasGS) {
       .from($('figcaption', c), { y: 20, opacity: 0, duration: .8, ease: 'power3.out' }, .6);
   });
   rise('.final .form', '.final-grid', fx({ y: 100, rotateX: 14, opacity: 0, transformOrigin: 'center top' }, 12));
-  $$('[data-glow]').forEach(g => G.to(g, { yPercent: 30, ease: 'none', scrollTrigger: { trigger: g.parentElement, start: 'top bottom', end: 'bottom top', scrub: true } }));
+  $$('.band-img').forEach(b => G.fromTo(b, { yPercent: -6 }, { yPercent: 6, ease: 'none', scrollTrigger: { trigger: b.parentElement, start: 'top bottom', end: 'bottom top', scrub: true } }));
 
   addEventListener('load', () => ST.refresh());
 } else {
@@ -710,7 +753,7 @@ const SCENE = {
     projects: { x: 2.7,  y: 1.5,  z: -3.5, rx: -.2, ry: -1.4, s: .6,  o: .3 },
     learn:    { x: 0,    y: 3.2,  z: -5,   rx: .5,  ry: .2,   s: .5,  o: 0 },
     reviews:  { x: -2.6, y: .9,   z: -2.6, rx: .2,  ry: -2.5, s: .7,  o: .45 },
-    team:     { x: 2.8,  y: -1.7, z: -3,   rx: .1,  ry: 2.3,  s: .6,  o: .2 },
+    team:     { x: 2.8,  y: -1.7, z: -3,   rx: .1,  ry: 2.3,  s: .6,  o: 0 },
     area:     { x: 0,    y: 3,    z: -5,   rx: .3,  ry: 3.3,  s: .5,  o: 0 },
     cta:      { x: -2.1, y: -.5,  z: -.6,  rx: .15, ry: .6,   s: .85, o: 1 }
   }
