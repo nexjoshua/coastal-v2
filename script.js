@@ -76,8 +76,19 @@ const FORM_ENDPOINT = 'https://services.leadconnectorhq.com/hooks/sKQj8192Kgs9Da
 const REVIEWS = [
   // { name: 'First name', text: 'Exact review text', when: 'March 2026' },
 ];
-const BRANDS = ['Panasonic', 'AirTouch 5', 'Mitsubishi Electric', 'Daikin', 'Fujitsu', 'Mitsubishi Heavy Industries', 'Samsung', 'Carrier', 'Haier'];
-const MAJOR_BRANDS = ['Panasonic', 'AirTouch 5'];   // shown highlighted in the brands strip
+/* Brand logos live in images/brands/. major: true = highlighted (our specialist brands).
+   If a logo file is missing, the brand name shows on a card instead */
+const BRANDS = [
+  { name: 'Panasonic', logo: 'panasonic.png', major: true },
+  { name: 'AirTouch 5', logo: 'airtouch.png', major: true },
+  { name: 'Mitsubishi Electric', logo: 'mitsubishi-electric.png' },
+  { name: 'Daikin', logo: 'daikin.png' },
+  { name: 'Fujitsu', logo: 'fujitsu.png' },
+  { name: 'Mitsubishi Heavy Industries', logo: 'mhi.png' },
+  { name: 'Samsung', logo: 'samsung.png' },
+  { name: 'Carrier', logo: 'carrier.png' },
+  { name: 'Haier', logo: 'haier.png' }
+];
 /* Projects: [file, title, caption, category, era]  REPLACE (images) */
 const PROJECTS = [
   // New shoot. REPLACE: confirm suburb, caption and category for each
@@ -139,7 +150,7 @@ document.addEventListener('click', e => {
    3. HEADER, MENU, FOOTER, FLOATING BUTTONS
    ===================================================================== */
 const IC = {
-  phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>',
+  phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.800.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>',
   cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
   pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>',
   chat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.4A8.4 8.4 0 1 1 21 11.5z"/></svg>',
@@ -224,7 +235,9 @@ wireEnquiry();
 $$('[data-call]').forEach(a => { a.href = 'tel:' + LOC.tel; if (!a.textContent.trim()) a.innerHTML = IC.phone + 'Call ' + LOC.phone; });
 document.addEventListener('click', e => { const a = e.target.closest('a[href^="tel:"]'); if (a) track('phone_click', { place: page }); });
 $$('[data-rating]').forEach(el => el.innerHTML = `<i class="stars">★★★★★</i> ${SITE.rating} from ${SITE.reviewCount} Google reviews`);
-$$('[data-brands]').forEach(el => el.innerHTML = `<div class="track">${[...BRANDS, ...BRANDS].map(b => `<span${MAJOR_BRANDS.includes(b) ? ' class="major"' : ''}>${b}</span>`).join('')}</div>`);
+/* brand logo marquee (second copy is for the seamless loop, hidden from screen readers) */
+const brandItem = (b, dup) => `<span${b.major ? ' class="major"' : ''}${dup ? ' aria-hidden="true"' : ''}><b class="bl"><img src="${u('images/brands/' + b.logo)}" alt="${dup ? '' : esc(b.name)}" data-name="${esc(b.name)}" decoding="async" onerror="this.parentNode.classList.add('txt');this.replaceWith(document.createTextNode(this.dataset.name))"></b></span>`;
+$$('[data-brands]').forEach(el => el.innerHTML = `<div class="track">${BRANDS.map(b => brandItem(b, false)).join('')}${BRANDS.map(b => brandItem(b, true)).join('')}</div>`);
 
 $$('[data-locations]').forEach(el => {
   el.innerHTML = `<div class="locs">${Object.entries(LOCATIONS).map(([k, L]) => {
