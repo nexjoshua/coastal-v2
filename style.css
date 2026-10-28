@@ -738,3 +738,12 @@ img{-webkit-user-select:none;user-select:none;-webkit-user-drag:none}
 .final-copy .btns{margin-top:22px}
 .final-copy .final-meta{margin-top:22px}
 @media(max-width:980px){.final-stage{display:none}}
+/* ===== Brands strip: clear logos, no cards (Panasonic + AirTouch 5 highlighted) ===== */
+.brands{padding:14px 0;background:var(--bg)}
+.brands span{display:inline-flex;align-items:center}
+.brands .bl{display:grid;place-items:center;width:clamp(130px,12vw,170px);height:clamp(44px,4.2vw,58px);font:700 15px/1.15 var(--fh);color:#2b2b30;text-align:center;white-space:normal;text-shadow:none;mix-blend-mode:screen;filter:grayscale(1) invert(1) brightness(1.4);opacity:.4;transition:opacity .3s,transform .4s var(--ease)}
+.brands .bl img{width:100%;height:100%;object-fit:contain}
+.brands span:hover .bl{opacity:1}
+/* specialist brands: orange, bigger, full strength */
+.brands span.major .bl{opacity:1;transform:scale(1.15);filter:grayscale(1) invert(1) brightness(.75) sepia(1) saturate(6) hue-rotate(-10deg)}
+@media(max-width:600px){.brands .bl{width:110px;height:40px}}
